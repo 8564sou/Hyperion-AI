@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperion AI - Math Expert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #e4e4e7;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        body::before {
+            content: '∑ ∫ ∂ ∞ π ℵ ∀ ∃ ∇ ⊕ ⊗ √ ∛ ± × ÷ ≈ ≠ ≤ ≥ ∈ ∉ → ⟹ ∧ ∨ ¬';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: 60px;
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: -1;
+            word-wrap: break-word;
+            overflow: hidden;
+            line-height: 1.8;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            max-height: 800px;
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #e94560;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.3), 
+                        0 0 60px rgba(41, 128, 185, 0.2);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(41, 128, 185, 0.1) 100%);
+            border-bottom: 1px solid rgba(233, 69, 96, 0.3);
+            padding: 20px 25px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e94560 0%, #2980b9 50%, #f39c12 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Chat Window */
+        .chat-window {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-window::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 10px;
+        }
+
+        .chat-window::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #e94560 0%, #2980b9 100%);
+            border-radius: 10px;
+        }
+
+        .chat-window::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #2980b9 0%, #f39c12 100%);
+        }
+
+        /* Messages */
+        .message {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .user-message .message-content {
+            background: linear-gradient(135deg, #e94560 0%, #c0392b 100%);
+            color: white;
+            max-width: 70%;
+            border-radius: 18px 18px 4px 18px;
+            padding: 12px 16px;
+            word-wrap: break-word;
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+        }
+
+        .ai-message {
+            justify-content: flex-start;
+        }
+
+        .ai-message .message-content {
+            background: rgba(41, 128, 185, 0.2);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            color: #e4e4e7;
+            max-width: 70%;
+            border-radius: 18px 18px 18px 4px;
+            padding: 12px 16px;
+            word-wrap: break-word;
+        }
+
+        .message-content p {
+            margin: 0;
+            line-height: 1.4;
+            font-size: 14px;
+        }
+
+        .message-content code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #f39c12;
+        }
+
+        .message-content .code-block {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #f39c12;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .message-content .code-block .comment {
+            color: #64748b;
+        }
+
+        .message-content .code-block .keyword {
+            color: #a78bfa;
+        }
+
+        .message-content .code-block .string {
+            color: #4ade80;
+        }
+
+        /* Input Area */
+        .input-area {
+            border-top: 1px solid rgba(0, 214, 188, 0.3);
+            background: rgba(15, 23, 42, 0.8);
+            padding: 15px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(30, 41, 59, 0.8);
+            border: 1.5px solid rgba(233, 69, 96, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: #e4e4e7;
+            font-size: 14px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            outline: none;
+            position: relative;
+        }
+
+        .input-field::placeholder {
+            color: #64748b;
+        }
+
+        .input-field:hover::before {
+            content: 'Ask me any math question!';
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #e94560 0%, #2980b9 100%);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 100;
+            pointer-events: none;
+            animation: tooltipFadeIn 0.3s ease;
+            box-shadow: 0 2px 8px rgba(233, 69, 96, 0.4);
+        }
+
+        .input-field:hover::after {
+            content: '';
+            position: absolute;
+            bottom: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid #2980b9;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .input-field:focus {
+            border-color: #e94560;
+            background: rgba(30, 41, 59, 1);
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #e94560 0%, #2980b9 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(233, 69, 96, 0.4);
+        }
+
+        .send-button:active {
+            transform: translateY(0px);
+        }
+
+        .send-icon {
+            font-size: 18px;
+        }
+
+        .hint-text {
+            font-size: 11px;
+            color: #64748b;
+            text-align: right;
+            margin: 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                max-height: 100vh;
+                border-radius: 15px;
+                height: 100vh;
+            }
+
+            .title {
+                font-size: 22px;
+            }
+
+            .user-message .message-content,
+            .ai-message .message-content {
+                max-width: 85%;
+            }
+
+            .input-field {
+                font-size: 16px;
+            }
+
+            .chat-window {
+                padding: 15px 15px;
+                gap: 12px;
+            }
+
+            .input-area {
+                padding: 12px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 10px;
+                border-width: 1px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .subtitle {
+                font-size: 11px;
+            }
+
+            .header {
+                padding: 15px 15px;
+            }
+
+            .user-message .message-content,
+            .ai-message .message-content {
+                max-width: 90%;
+                font-size: 13px;
+                padding: 10px 14px;
+            }
+
+            .send-button {
+                padding: 10px 12px;
+            }
+
+            .input-field {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">📐 Hyperion Math Expert</h1>
+            <p class="subtitle">Master Mathematics - Any Topic, Level, or Complexity</p>
+        </div>
+
+        <div class="chat-window" id="chatWindow">
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>� Welcome to Hyperion Math Expert! I'm your specialized mathematics tutor and problem-solving companion. I have comprehensive knowledge covering:</p>
+                </div>
+            </div>
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>🔢 <strong>Pure Mathematics:</strong> Algebra, geometry, trigonometry, calculus, linear algebra, number theory, set theory, logic</p>
+                </div>
+            </div>
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>📊 <strong>Applied Mathematics:</strong> Statistics, probability, differential equations, optimization, numerical methods</p>
+                </div>
+            </div>
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>🧮 <strong>Advanced Topics:</strong> Complex analysis, abstract algebra, topology, functional analysis, multivariable calculus</p>
+                </div>
+            </div>
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>✅ <strong>Problem Solving:</strong> Equations, proofs, derivations, step-by-step solutions, formula explanations</p>
+                </div>
+            </div>
+            <div class="message ai-message">
+                <div class="message-content">
+                    <p>🎯 Ask me anything about math - derive a formula, solve equations, explain concepts, or tackle complex problems! What would you like to solve?</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    class="input-field" 
+                    placeholder="Type your message here..."
+                    title="Ask me any Python programming question - I'm specialized in Python!"
+                    autocomplete="off"
+                >
+                <button id="sendBtn" class="send-button">
+                    <span class="send-icon">➤</span>
+                </button>
+            </div>
+            <p class="hint-text">Press Enter or click the button to send</p>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const chatWindow = document.getElementById('chatWindow');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // COMPREHENSIVE Python Knowledge Base for Hyperion AI
+        const knowledgeBase = {
+            // SECTION 1: Overview & Characteristics
+            overview: {
+                keywords: ['what is python', 'python overview', 'python introduction', 'python definition', 'python history', 'guido van rossum', '1991'],
+                responses: [
+                    "Python is a high-level, interpreted, general-purpose programming language created by Guido van Rossum and first released in 1991. It emphasizes readability, simplicity, and productivity, making it one of the most widely used languages in software development, AI, data science, automation, and web development.",
+                    "Python is an interpreted language with dynamic typing, excellent support for object-oriented and functional programming, extensive standard library, and a large ecosystem of third-party packages. It's maintained by the Python Software Foundation and is perfect for beginners yet powerful for advanced applications.",
+                    "Key Python characteristics: interpreted execution, dynamically typed, automatic garbage collection, cross-platform (Windows, Linux, macOS), simple syntax that reads like English, massive community support, and versatility across thousands of applications."
+                ]
+            },
+            // SECTION 2: Installation & Versions
+            installation: {
+                keywords: ['install python', 'download python', 'setup python', 'python version', 'python 3', 'python 2', 'pip', 'homebrew'],
+                responses: [
+                    "To install Python: 1) Visit python.org 2) Download the latest Python 3 version 3) Run the installer 4) On Windows, check 'Add Python to PATH'. Verify with 'python --version' in terminal. Python 2 reached end-of-life in 2020 - always use Python 3.x for new projects!",
+                    "Installation by OS: Windows - download .exe from python.org; macOS - use Homebrew: 'brew install python3'; Linux - usually pre-installed or use package manager: 'apt-get install python3'. Python comes pre-installed on most Linux and macOS systems.",
+                    "After installation, verify with: python --version or python3 --version. Install packages using pip: 'pip install package_name'. Create virtual environments to isolate project dependencies: 'python -m venv env_name'. Always use Python 3.7 or newer!"
+                ]
+            },
+            // SECTION 3: Data Types
+            data_types: {
+                keywords: ['data type', 'int', 'float', 'string', 'str', 'bool', 'boolean', 'type checking', 'list', 'tuple', 'dict', 'set', 'none'],
+                responses: [
+                    "Python's fundamental data types: int (32-bit integers), float (floating-point numbers with decimals), str (text strings), bool (True/False), list (mutable sequences), tuple (immutable sequences), dict (key-value pairs), set (unique collections), NoneType (null value). Use type() to check: type(42) returns <class 'int'>.",
+                    "Examples of data types: int: 42, -10; float: 3.14, 2.0; str: 'hello', \"world\"; bool: True, False; list: [1,2,3]; tuple: (1,2,3); dict: {'name':'John','age':30}; set: {1,2,3}; None: represents absence of value.",
+                    "Type conversion: int('42') converts string to int, str(42) converts int to string, float('3.14') gets float, bool(1) gives True, list((1,2)) converts tuple to list. Python's dynamic typing allows variables to change types: x = 10; x = 'hello'; works fine!"
+                ]
+            },
+            // SECTION 4: Variables & Operators
+            variables: {
+                keywords: ['variable', 'variable assignment', 'naming convention', 'arithmetic operator', 'operator', '+', '-', '*', '/', '//', '%', '**'],
+                responses: [
+                    "Create variables without type declaration: name = 'Alice', age = 30, price = 19.99. Variables are case-sensitive: Name and name are different. Follow naming: lowercase with underscores (my_variable), avoid reserved keywords (if, for, class, etc.). Variables automatically determine their type.",
+                    "Arithmetic operators: + (add), - (subtract), * (multiply), / (divide gives float), // (floor division), % (modulo/remainder), ** (exponentiation). Examples: 10 + 5 = 15, 10 / 3 = 3.333, 10 // 3 = 3, 10 % 3 = 1, 2 ** 3 = 8.",
+                    "Comparison operators: == (equal), != (not equal), > (greater), < (less), >= (greater-equal), <= (less-equal). Logical operators: 'and', 'or', 'not'. Assignment operators: =, +=, -=, *=, /=, //=, %=, **=. String operators: + (concatenate), * (repeat)."
+                ]
+            },
+            // SECTION 5: Control Flow
+            control_flow: {
+                keywords: ['if statement', 'if elif else', 'conditional', 'for loop', 'while loop', 'break', 'continue', 'pass', 'loop', 'range', 'iteration'],
+                responses: [
+                    "IF statements: if condition: code block, elif other_condition: block, else: block. Example: if age >= 18: print('Adult') elif age >= 13: print('Teen') else: print('Child'). Use == for comparison, not =. Indentation is critical in Python!",
+                    "FOR loops iterate over sequences: for i in range(5): print(i) loops 0-4. for item in list: process(item) iterates over list items. for key, value in dict.items(): access both. range(start, stop, step) creates sequences. range(10) is 0-9, range(2,8) is 2-7, range(0,10,2) is 0,2,4,6,8.",
+                    "WHILE loops repeat until condition fails: while x < 10: x += 1. Use break to exit loop early, continue to skip current iteration, pass for empty blocks. FOR-ELSE repeats else block if loop completes normally without break: for i in items: if condition: break else: print('no match found')."
+                ]
+            },
+            // SECTION 6: Functions
+            functions: {
+                keywords: ['function', 'def', 'return', 'parameter', 'argument', 'lambda', 'default parameter', 'args', 'kwargs', '*args', '**kwargs', 'docstring'],
+                responses: [
+                    "Define functions with 'def':\ndef greet(name):\n    return f'Hello, {name}!'\n\ngreet('Alice')  # Outputs: Hello, Alice!\n\nFunctions with default parameters:\ndef add(a, b=5):\n    return a + b\n\nadd(10)      # Returns 15\nadd(10, 20)  # Returns 30\n\nFunctions can return multiple values: return x, y, z",
+                    "Lambda functions are anonymous:\nsquare = lambda x: x*x\nmultiply = lambda x, y: x*y\n\nUsed for short, throwaway functions. *args captures multiple positional arguments as tuple:\ndef func(*args):\n    for arg in args:\n        print(arg)\n\n**kwargs captures keyword arguments as dict:\ndef func(**kwargs):\n    for key, value in kwargs.items():\n        print(f'{key}: {value}')",
+                    "Docstrings document functions:\ndef func(x):\n    '''This function does X.\n    Args: x (int): input value\n    Returns: int: result\n    '''\n    return x * 2\n\nUse help(func) to view docstrings. Recursion example:\ndef fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)"
+                ]
+            },
+            // SECTION 7: Data Structures
+            lists: {
+                keywords: ['list', 'mutable', 'append', 'remove', 'insert', 'pop', 'extend', 'list comprehension', 'slicing', 'index'],
+                responses: [
+                    "Lists are mutable sequences: my_list = [1, 2, 3, 'four', 5.0]. Access by index: my_list[0] = 1, my_list[-1] = 5.0 (last item). Slice: my_list[1:3] = [2, 3], my_list[::2] = [1, 3, 5.0]. Modify: my_list[0] = 10, my_list.append(6), my_list.extend([7,8]).",
+                    "List methods: append(item) adds at end, insert(index, item) inserts at position, remove(item) removes first occurrence, pop(index) removes and returns, clear() empties list, copy() creates copy, sort() sorts in-place, reverse() reverses in-place, count(item) counts occurrences, index(item) finds position.",
+                    "List comprehensions create lists concisely: [x*2 for x in range(5)] = [0,2,4,6,8], [x for x in items if x > 5], [x.upper() for x in list_of_strings]. Nested: [[y*2 for y in row] for row in matrix]. Much faster than loops for creation!"
+                ]
+            },
+            tuples: {
+                keywords: ['tuple', 'immutable', 'unpacking', 'named tuple', 'packing', '(', ')', 'tuple unpacking'],
+                responses: [
+                    "Tuples are immutable sequences: my_tuple = (1, 2, 3) or 1, 2, 3. Can't modify after creation: my_tuple[0] = 5 raises error. Access like lists: my_tuple[0] = 1, my_tuple[-1] = 3. Useful for: returning multiple values, dictionary keys (lists can't be keys), fixed data collections.",
+                    "Tuple unpacking: a, b, c = (1, 2, 3) assigns values. x, y = get_coordinates(). *args in functions returns tuple. (1,) is single-element tuple (comma required). () is empty tuple. Methods: count(item), index(item). Tuples are hashable unlike lists.",
+                    "Named tuples: from collections import namedtuple. Point = namedtuple('Point', ['x','y']). p = Point(1,2). Access: p.x, p.y or p[0], p[1]. Advantages: readable code with named fields, still immutable and fast. Tuple packing and unpacking: a = 1,2,3 creates tuple."
+                ]
+            },
+            dictionaries: {
+                keywords: ['dictionary', 'dict', 'key', 'value', 'keys', 'values', 'items', 'get', 'update', 'pop', 'clear', 'setdefault'],
+                responses: [
+                    "Dictionaries store key-value pairs: my_dict = {'name': 'John', 'age': 30}. Access: my_dict['name'] = 'John', my_dict.get('name') = 'John' (safer, returns None if missing). Add/update: my_dict['city'] = 'NYC', my_dict['age'] = 31. Delete: del my_dict['age'] or my_dict.pop('age').",
+                    "Dictionary methods: keys() returns all keys, values() returns all values, items() returns (key,value) tuples, get(key, default) gets value safely, update(other_dict) merges dictionaries, pop(key) removes and returns, clear() empties dict, setdefault(key, default) sets if missing. Check membership: 'name' in my_dict = True.",
+                    "Iterate dictionaries: for key in my_dict: process(key). for key, value in my_dict.items(): process both. Dictionary comprehensions: {k: v*2 for k,v in dict.items()}, {k: v for k,v in dict.items() if v > 10}. Nested dicts: person = {'name':'John', 'address':{'street':'123 Main', 'city':'NYC'}}."
+                ]
+            },
+            sets: {
+                keywords: ['set', 'unique', 'add', 'remove', 'union', 'intersection', 'difference', 'subset', 'frozenset'],
+                responses: [
+                    "Sets store unique, unordered collections: my_set = {1, 2, 3, 2} becomes {1, 2, 3}. {} creates empty dict, use set() for empty set. Add/remove: my_set.add(4), my_set.remove(2) (errors if missing), my_set.discard(2) (no error). Methods: pop() removes random, clear() empties.",
+                    "Set operations: union (|): {1,2} | {2,3} = {1,2,3}. intersection (&): {1,2} & {2,3} = {2}. difference (-): {1,2} - {2,3} = {1}. symmetric difference (^): {1,2} ^ {2,3} = {1,3}. Check: 2 in my_set, my_set1.issubset(my_set2), my_set1.issuperset(my_set2).",
+                    "Frozenset is immutable set: fs = frozenset({1,2,3}). Can't add/remove. Use as dictionary keys or set elements. Set comprehensions: {x*2 for x in range(5)} = {0,2,4,6,8}. Remove duplicates: list(set(my_list)). Sets are unordered, so index access doesn't exist."
+                ]
+            },
+            // SECTION 8: OOP (Object-Oriented Programming)
+            oop: {
+                keywords: ['class', 'object', 'inheritance', 'method', 'self', '__init__', 'constructor', 'encapsulation', 'polymorphism', 'parent', 'child'],
+                responses: [
+                    "Define a class:\nclass Dog:\n    def __init__(self, name):\n        self.name = name\n\n    def bark(self):\n        print(f'Woof, {self.name}!')\n\ndog = Dog('Rex')\ndog.bark()  # Outputs: Woof, Rex!\n\n'self' represents the instance. Call methods with dog.bark()",
+                    "Inheritance example:\nclass Animal:\n    def speak(self):\n        print('generic sound')\n\nclass Dog(Animal):\n    def speak(self):\n        print('bark')\n\ndog = Dog()\ndog.speak()  # Outputs: bark (overrides parent)\nsuper().speak()  # Calls parent method\n\nMultiple inheritance: class C(A, B): pass",
+                    "Encapsulation:\nclass MyClass:\n    def __init__(self):\n        self._protected = 'protected'\n        self.__private = 'private'\n\n    @property\n    def value(self):\n        return self._value\n\n    @value.setter\n    def value(self, val):\n        self._value = val\n\nDunder methods enable operations: __str__(), __repr__(), __len__(), __getitem__()"
+                ]
+            },
+            // SECTION 9: Modules & Packages
+            modules: {
+                keywords: ['import', 'module', 'package', 'pip', 'pip install', 'from import', 'as', 'standard library', 'namespace'],
+                responses: [
+                    "Import modules:\nimport math\nmath.sqrt(16)  # Returns 4.0\n\nfrom math import sqrt\nsqrt(16)  # Direct use\n\nfrom collections import Counter\nfrom os.path import join\n\nimport numpy as np  # Aliasing\nnp.array([1, 2, 3])\n\nBuilt-in modules: math, random, datetime, os, sys, json, re, collections, itertools",
+                    "Standard library highlights: math (sqrt, sin, cos, pi), random (choice, randint, shuffle), datetime (date, time, timedelta), os (file/dir operations), sys (system info), json (parse JSON), re (regex), collections (Counter, defaultdict, namedtuple), itertools (combinations, permutations).",
+                    "Install external packages with pip: pip install numpy pandas matplotlib. pip list shows installed packages. pip install --upgrade package_name updates. pip install package==1.0.0 installs specific version. Create requirements.txt: pip freeze > requirements.txt. Install all: pip install -r requirements.txt. Virtual environments isolate projects: python -m venv venv_name."
+                ]
+            },
+            // SECTION 10: Popular Libraries
+            libraries: {
+                keywords: ['numpy', 'pandas', 'matplotlib', 'scikit-learn', 'tensorflow', 'pytorch', 'django', 'flask', 'requests', 'beautifulsoup', 'selenium'],
+                responses: [
+                    "Data Science: NumPy for numerical arrays and linear algebra, Pandas for data frames and CSV/Excel, Matplotlib for plotting, Seaborn for statistical graphics, SciPy for scientific computing. ML: Scikit-learn for classical ML, TensorFlow/Keras for deep learning, PyTorch for neural networks, XGBoost for gradient boosting.",
+                    "Web Development: Django full-featured web framework with ORM/admin, Flask lightweight microframework, FastAPI modern async framework, Requests for HTTP requests, BeautifulSoup for web scraping, Selenium for browser automation. Automation: Schedule for task scheduling, APScheduler for advanced scheduling, Celery for async tasks.",
+                    "Example usage: import numpy as np; arr = np.array([1,2,3]); arr * 2 = [2,4,6]. import pandas as pd; df = pd.read_csv('file.csv'). import requests; r = requests.get('url'); r.json(). Special libraries: Pillow for image processing, OpenCV for computer vision, spaCy for NLP, NLTK for text analysis."
+                ]
+            },
+            // SECTION 11: File Handling
+            files: {
+                keywords: ['file', 'read', 'write', 'append', 'open', 'close', 'with', 'readline', 'readlines', 'writelines', 'csv', 'json'],
+                responses: [
+                    "Open and read files:\nwith open('file.txt', 'r') as f:\n    content = f.read()\n\nFile modes: 'r' (read), 'w' (write/overwrite), 'a' (append), 'rb' (read binary), 'wb' (write binary)\n\nWrite to file:\nwith open('file.txt', 'w') as f:\n    f.write('Hello, World!')\n    f.writelines(['Line 1\\n', 'Line 2\\n'])\n\nUsing 'with' auto-closes the file!",
+                    "Work with CSV:\nimport csv\n\nwith open('data.csv', 'r') as f:\n    reader = csv.reader(f)\n    for row in reader:\n        print(row)\n\nWith header:\nreader = csv.DictReader(f)\nfor row in reader:\n    print(row['column_name'])\n\nWrite CSV:\nwriter = csv.writer(f)\nwriter.writerow(['Name', 'Age'])",
+                    "JSON operations:\nimport json\n\n# Read JSON\nwith open('data.json', 'r') as f:\n    data = json.load(f)\n\n# Write JSON\nwith open('output.json', 'w') as f:\n    json.dump(data, f)\n\n# Parse string\ndata = json.loads('{\"key\": \"value\"}')\njson_str = json.dumps(data)\n\n# File operations\nimport os\nos.path.exists('file.txt')\nos.path.getsize('file.txt')\nos.remove('file.txt')"
+                ]
+            },
+            // SECTION 12: Error Handling
+            exceptions: {
+                keywords: ['error', 'exception', 'try', 'except', 'finally', 'raise', 'traceback', 'debugging', 'valueerror', 'typeerror', 'keyerror'],
+                responses: [
+                    "Try-except-finally structure:\ntry:\n    x = 1 / 0\nexcept ZeroDivisionError:\n    print('Cannot divide by zero')\nexcept (ValueError, TypeError):\n    print('Value or Type Error')\nfinally:\n    print('Cleanup code')\n\nCatch specific exceptions first!",
+                    "Raise custom exceptions:\nif value < 0:\n    raise ValueError('Value must be positive')\n\nCustom exception class:\nclass MyError(Exception):\n    pass\n\nraise MyError('Custom error message')\n\nCommon exceptions: ValueError, TypeError, KeyError, IndexError, FileNotFoundError, AttributeError, ZeroDivisionError",
+                    "Debugging with traceback:\nimport traceback\n\ntry:\n    risky_code()\nexcept Exception:\n    traceback.print_exc()  # Full error details\n\nAlso use try-except-else:\ntry:\n    code()\nexcept Error:\n    handle_error()\nelse:\n    # Runs if no exception\n    success()"
+                ]
+            },
+            // SECTION 13: Advanced Concepts
+            advanced: {
+                keywords: ['decorator', 'generator', 'yield', 'lambda', 'closure', 'async', 'await', 'context manager', 'metaclass', 'property', '@property'],
+                responses: [
+                    "Decorators modify functions: @decorator wraps function. Example: def my_decorator(func): def wrapper(): print('Before'); func(); return wrapper. @my_decorator def say_hello(): print('Hello'). Useful for timing, logging, authentication. Chaining: @decorator1 @decorator2 def func().",
+                    "Generators yield values lazily: def count(): i=0; yield i; i+=1; yield i. Generator expressions: (x*2 for x in range(5)). Memory efficient for large datasets. Closures: function inside function accessing outer scope variable. Lambda: lambda x,y: x+y creates anonymous function. Use in: map(lambda x: x*2, [1,2,3]), filter(lambda x: x>5, list), sorted(list, key=lambda x: x[1]).",
+                    "Async/await for concurrent code: async def fetch(): await asyncio.sleep(1). Context managers with 'with' statement. @property decorator for properties: @property def name(self): return self._name. List comprehensions over nested loops. *args unpacking: def func(*args) receives tuple. **kwargs: def func(**kwargs) receives dict. Type hints: def func(x: int) -> str: improve readability."
+                ]
+            },
+            // SECTION 14: Best Practices
+            best_practices: {
+                keywords: ['pep 8', 'style guide', 'convention', 'pythonic', 'best practice', 'clean code', 'naming', 'comment', 'docstring', 'testing'],
+                responses: [
+                    "Follow PEP 8 style guide: use lowercase_with_underscores for variables/functions, UPPERCASE_WITH_UNDERSCORES for constants, CapitalCasing for classes. Indentation: 4 spaces (never tabs). Max line length: 79 characters. Add blank lines between functions/classes. Use meaningful names. Write docstrings for functions/classes.",
+                    "Pythonic principles: use 'is None' not '== None', use 'in' for membership checks, use enumerate() for index+value, avoid mutable default arguments def func(x=[]) use def func(x=None): if x is None: x=[]. Prefer list comprehensions over loops. Use context managers (with statement). Avoid bare except clauses.",
+                    "Write testable code: small focused functions, pure functions when possible, avoid global state, use type hints, write unit tests with unittest or pytest. Virtual environments isolate projects. Use git for version control. Document code with comments. Avoid try-except-pass silently catching errors. Handle exceptions specifically, not broadly. Keep secrets in environment variables, not in code!"
+                ]
+            },
+            // SECTION 15: Virtual Environments
+            venv: {
+                keywords: ['virtual environment', 'venv', 'activate', 'deactivate', 'virtualenv', 'dependency isolation', 'requirements.txt'],
+                responses: [
+                    "Create virtual environment: python -m venv env_name. Activate: Windows: env\\Scripts\\activate; macOS/Linux: source env/bin/activate. Shows (env) in prompt when active. Deactivate: type 'deactivate'. Benefits: isolate project dependencies, avoid version conflicts, share requirements with others.",
+                    "Save dependencies: pip freeze > requirements.txt. Share with: pip install -r requirements.txt. Check installed: pip list. Upgrade pip: python -m pip install --upgrade pip. Create in .gitignore: virtual env directories shouldn't be in git (too large). Re-create env anytime: new machine just pip install -r requirements.txt.",
+                    "Alternative tools: virtualenv (older), conda (Anaconda), poetry (modern dependency management). Poetry advantages: lock file for exact versions, better dependency resolution. Standard practice: always use virtual environments for Python projects!"
+                ]
+            },
+            // SECTION 16: String Formatting
+            strings: {
+                keywords: ['string', 'format', 'f-string', 'f\"', 'concatenation', 'strip', 'split', 'join', '.format()', '%', 'string methods'],
+                responses: [
+                    "F-strings (Python 3.6+): f'Hello {name}' embeds variables, f'Result: {2+2}' evaluates expressions, f'{value:.2f}' formats with 2 decimals. Older methods: 'Hello {}'.format(name), 'Hello %s' % name. String methods: upper(), lower(), capitalize(), strip() removes whitespace, split() splits by delimiter, join() combines list.",
+                    "String operations: 'hello' + ' world' = 'hello world', 'ha' * 3 = 'hahaha', 'e' in 'hello' = True, len('hello') = 5, 'hello'[0] = 'h'. Slicing: 'hello'[1:4] = 'ell', 'hello'[::-1] = 'olleh' (reverse). Methods: find(substring), replace(old, new), startswith(), endswith(), count().",
+                    "Replace with format: 'The {0} {1}'.format('quick', 'brown') or 'The {adj} {color}'.format(adj='quick', color='brown'). Padding: f'{number:05d}' (5 digits, pad with 0s), f'{value:<10}' (left-align), f'{value:>10}' (right-align), f'{value:^10}' (center). Decimal places: f'{3.14159:.2f}' = 3.14."
+                ]
+            },
+            // SECTION 17: Project Structure
+            project_structure: {
+                keywords: ['project structure', 'directory layout', 'main.py', '__init__.py', 'setup.py', 'readme', 'folder organization'],
+                responses: [
+                    "Typical Python project structure: project/ ├── main.py ├── requirements.txt ├── README.md ├── src/ (source code) ├── tests/ (test files) ├── docs/ (documentation) └── venv/ (virtual environment). Keep code organized by modules and packages. Put main logic in functions/classes, not at top level.",
+                    "__init__.py files turn directories into packages (can be empty). Put shared functions in utils.py or helpers.py. Test files mirror src structure: tests/test_module.py tests src/module.py. requirements.txt lists dependencies. README.md explains project. GITIGNORE excludes venv/, __pycache__/, .pyc files.",
+                    "Large projects: src/projectname/module1.py, src/projectname/module2.py, setup.py for packaging, conftest.py for pytest, .env for environment variables. Naming: lowercase_with_underscores.py for files, CapitalCasing for classes, lowercase_with_underscores() for functions. Keep files < 200 lines, separate concerns into different modules."
+                ]
+            },
+            // SECTION 18: Common Patterns
+            patterns: {
+                keywords: ['pattern', 'singleton', 'factory', 'decorator pattern', 'observer', 'iterator', 'context manager', 'mixin'],
+                responses: [
+                    "Singleton pattern ensures one instance: class Singleton: _instance = None; def __new__(cls): if cls._instance: return cls._instance; cls._instance = super().__new__(cls); return cls._instance. Factory pattern creates objects: class AnimalFactory: @staticmethod def create(animal_type): returns Dog() or Cat().",
+                    "Observer pattern: one object notifies many observers of state changes. Iterator pattern: for item in iterable yields items one-by-one. Context manager pattern: with statement manages resources. Mixin pattern: inherit from multiple classes to add functionality. Decorator pattern: wrap function/method to modify behavior.",
+                    "Common Python idioms: for-else (else runs if loop completes without break), try-except-else-finally (exception handling flow), enumerate(iterable) (index + value), zip(list1, list2) (pairs items), list comprehension (concise list creation), f-strings (readable formatting), dict.get(key, default) (safe access)."
+                ]
+            },
+            // SECTION 19: Operators & Keywords
+            operators: {
+                keywords: ['operator', 'comparison', 'logical', 'bitwise', 'in', 'not in', 'is', 'is not', 'and', 'or', 'not', '&', '|', '^', '<<', '>>'],
+                responses: [
+                    "Comparison operators result in bool: == (equals), != (not equal), < (less than), > (greater), <= (less/equal), >= (greater/equal). Logical operators: 'and' (both true), 'or' (at least one true), 'not' (negate). Short-circuit evaluation: 'False and expensive()' doesn't call expensive().",
+                    "Membership operators: 'in' checks if item in collection, 'not in' opposite. Identity operators: 'is' checks if same object (use for None), 'is not' opposite. x = y; x is y = True (same object). x = [1]; y = [1]; x is y = False (different objects but equal values, x == y = True).",
+                    "Bitwise operators (&, |, ^, ~, <<, >>): 5 & 3 = 1 (AND), 5 | 3 = 7 (OR), 5 ^ 3 = 6 (XOR), ~5 = -6 (NOT), 5 << 1 = 10 (left shift), 5 >> 1 = 2 (right shift). Used mainly in systems programming, graphics, cryptography."
+                ]
+            },
+            // SECTION 20: Facts & History
+            facts: {
+                keywords: ['python facts', 'fun fact', 'history', 'guido', 'monty python', 'pep 20', 'zen of python', 'python 2', 'python 3'],
+                responses: [
+                    "Python trivia: Named after Monty Python comedy group, not the snake! Created by Guido van Rossum in 1991. Guido stepped down as BDFL (Benevolent Dictator For Life) in 2019 but came back in 2021. Python 2 officially ended January 1, 2020. Type 'import this' to read The Zen of Python (20 guiding principles).",
+                    "Python statistics: Fastest-growing major programming language. Ranks #1 for AI/ML, data science, education. Used by Google, Netflix, Instagram, Spotify, Dropbox, NASA, Uber. Powers 4 out of top 5 web hosting providers. Most popular language on GitHub. Over 10 million Python developers worldwide.",
+                    "Python versions: 1.0 (1994), 2.0 (2000, list comprehensions), 3.0 (2008, breaking changes), 3.6 (f-strings), 3.7 (dict ordering), 3.8 (walrus :=), 3.9 (type hints), 3.10 (match statement), 3.11 (faster), 3.12 (current). New version every October. Always update to latest patch version for security."
+                ]
+            },
+            // SECTION 21: Comprehensions
+            comprehensions: {
+                keywords: ['comprehension', 'list comprehension', 'dict comprehension', 'set comprehension', 'generator expression', 'nested comprehension'],
+                responses: [
+                    "List comprehension syntax: [expression for item in iterable if condition]. Examples: [x*2 for x in range(5)] = [0,2,4,6,8], [x for x in range(10) if x % 2 == 0] = [0,2,4,6,8], [x.upper() for x in ['a','b','c']] = ['A','B','C']. Nested: [[y*2 for y in row] for row in matrix].",
+                    "Dictionary comprehension: {key: value for item in iterable if condition}. Examples: {x: x*x for x in range(5)} = {0:0, 1:1, 2:4, 3:9, 4:16}, {k: v*2 for k, v in old_dict.items()}. Set comprehension: {x*2 for x in range(5)} = {0,2,4,6,8}. Generator expression: (x*2 for x in range(1000)) yields one at a time (memory efficient).",
+                    "Performance: comprehensions faster than equivalent loops. [x*2 for x in range(1000)] beats for x in range(1000): x*2. Readability: simple comprehensions clear, complex ones hard to read. In doubt, use regular loops. Comprehension order: [expression if-condition for item in iterable if condition2] (condition before/after depending on placement)."
+                ]
+            },
+            // SECTION 22: Built-in Functions
+            builtins: {
+                keywords: ['builtin', 'built-in', 'len', 'max', 'min', 'sum', 'any', 'all', 'sorted', 'enumerate', 'zip', 'map', 'filter', 'range'],
+                responses: [
+                    "Essential built-ins: len(iterable) length, max(iterable) largest, min(iterable) smallest, sum(iterable) total, abs(number) absolute value, round(number, digits) rounds, pow(x, y) power, divmod(a, b) returns (quotient, remainder).",
+                    "Iteration helpers: enumerate(iterable) gives (index, value) tuples, zip(list1, list2) pairs items, range(start, stop, step) generates numbers, sorted(iterable, key=func, reverse=bool) sorts, reversed(iterable) reverses. map(function, iterable) applies function to each item, filter(function, iterable) keeps matching items.",
+                    "Logic built-ins: any(iterable) True if any item truthy, all(iterable) True if all truthy, isinstance(obj, type) type check, type(obj) gets type, callable(obj) is it callable?, hasattr(obj, 'attr') has attribute?, getattr(obj, 'attr', default) gets attribute safely, setattr(obj, 'attr', value) sets attribute."
+                ]
+            },
+            // Default off-topic response
+            off_topic: {
+                keywords: [],
+                responses: [
+                    "I'm specialized in Python programming! Your question doesn't seem to be about Python. Ask me anything about Python syntax, libraries, best practices, design patterns, or how to solve Python problems!",
+                    "That's a good question, but it's outside my Python expertise! I specialize exclusively in Python programming. Do you have a Python question I can help with?",
+                    "I'm a Python-focused assistant! Feel free to ask about Python coding, frameworks, libraries, advanced concepts, project structure, or programming techniques. What Python topic interests you?"
+                ]
+            }
+        };
+
+        /**
+         * Find the best matching Python category
+         * @param {string} text - User input text
+         * @returns {object} - Matched category object
+         */
+        function findMatchingCategory(text) {
+            const lowerText = text.toLowerCase();
+            let bestMatch = knowledgeBase.off_topic;
+            let highestScore = 0;
+
+            // Check each Python category for keyword matches
+            for (const [categoryName, category] of Object.entries(knowledgeBase)) {
+                if (categoryName === 'off_topic') continue; // Skip off-topic category in main loop
+                
+                let score = 0;
+                for (const keyword of category.keywords) {
+                    if (lowerText.includes(keyword)) {
+                        score += keyword.length; // Longer keywords have higher weight
+                    }
+                }
+                
+                if (score > highestScore) {
+                    highestScore = score;
+                    bestMatch = category;
+                }
+            }
+
+            // If no Python keywords found, use off-topic response
+            if (highestScore === 0) {
+                bestMatch = knowledgeBase.off_topic;
+            }
+
+            return bestMatch;
+        }
+
+        /**
+         * Generate AI response using knowledge base
+         * @param {string} userMessage - The user's input message
+         * @returns {Promise<string>} - AI response from knowledge base
+         */
+        async function generateAIResponse(userMessage) {
+            // Simulate slight API delay for realism (optional - can be removed)
+            // await new Promise(resolve => setTimeout(resolve, 300));
+            
+            const matchedCategory = findMatchingCategory(userMessage);
+            const responses = matchedCategory.responses;
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            
+            return randomResponse;
+            
+            // TODO: Future API integration
+            // Example for connecting to a real backend API:
+            // const response = await fetch('/api/chat', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify({ message: userMessage })
+            // });
+            // const data = await response.json();
+            // return data.reply;
+        }
+
+        /**
+         * Add a message to the chat window with structured code support
+         * @param {string} text - Message text
+         * @param {string} sender - 'user' or 'ai'
+         */
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            // Check if message contains code patterns
+            const codePatterns = /(\b(?:def|class|import|from|if|for|while|try|except|with|return|yield|async|await|lambda)\b)|([a-zA-Z_]\w+\s*=)|(\[.*\])|(\{.*\})|(\(.*\))/g;
+            const hasCode = codePatterns.test(text);
+            const hasMultilineIndicators = text.includes('\n') && (
+                text.includes('def ') || 
+                text.includes('class ') || 
+                text.includes('import ') ||
+                text.includes('for ') ||
+                text.includes('while ') ||
+                text.includes('if ') ||
+                text.includes('try:') ||
+                text.includes('except') ||
+                text.includes('   ') || // indentation
+                (text.match(/\n/g) || []).length > 2
+            );
+
+            if (hasCode || hasMultilineIndicators) {
+                // Split text into code blocks and regular text
+                const lines = text.split('\n');
+                let buffer = [];
+                let inCodeBlock = false;
+                let codeLines = [];
+
+                lines.forEach(line => {
+                    const isCodeLine = /^\s*(def|class|import|from|if|for|while|try|except|with|return|yield|async|await|lambda|[a-zA-Z_]\w+\s*=|\[|\{|\(|>>>|\.|\#)/.test(line);
+                    const isIndented = /^\s{2,}/.test(line) && line.trim().length > 0;
+
+                    if (isCodeLine || isIndented || inCodeBlock) {
+                        codeLines.push(line);
+                        inCodeBlock = true;
+                    } else {
+                        if (codeLines.length > 0) {
+                            // Flush code block
+                            const codeDiv = document.createElement('div');
+                            codeDiv.className = 'code-block';
+                            codeDiv.textContent = codeLines.join('\n');
+                            contentDiv.appendChild(codeDiv);
+                            codeLines = [];
+                            inCodeBlock = false;
+                        }
+                        if (line.trim().length > 0) {
+                            buffer.push(line);
+                        }
+                    }
+                });
+
+                // Flush remaining code block
+                if (codeLines.length > 0) {
+                    const codeDiv = document.createElement('div');
+                    codeDiv.className = 'code-block';
+                    codeDiv.textContent = codeLines.join('\n');
+                    contentDiv.appendChild(codeDiv);
+                }
+
+                // Add remaining text
+                if (buffer.length > 0) {
+                    const paragraph = document.createElement('p');
+                    paragraph.textContent = buffer.join('\n');
+                    contentDiv.appendChild(paragraph);
+                }
+            } else {
+                // Regular text message
+                const paragraph = document.createElement('p');
+                paragraph.innerHTML = text
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    .replace(/\n/g, '<br>');
+                contentDiv.appendChild(paragraph);
+            }
+            
+            messageDiv.appendChild(contentDiv);
+            chatWindow.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        /**
+         * Scroll chat window to the bottom
+         */
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }, 0);
+        }
+
+        /**
+         * Handle sending a message
+         */
+        async function handleSendMessage() {
+            const message = userInput.value.trim();
+            
+            if (message === '') return;
+            
+            // Add user message to chat
+            addMessage(message, 'user');
+            
+            // Clear input field
+            userInput.value = '';
+            userInput.focus();
+            
+            // Generate and add AI response
+            const aiResponse = await generateAIResponse(message);
+            addMessage(aiResponse, 'ai');
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSendMessage);
+
+        userInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleSendMessage();
+            }
+        });
+
+        // Focus input on page load
+        window.addEventListener('load', () => {
+            userInput.focus();
+            scrollToBottom();
+        });
+    </script>
+</body>
+</html>
